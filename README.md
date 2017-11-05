@@ -3,9 +3,9 @@
 Project Titor is an application that encrypt files using AES-128 Algorithm and RSA password encryption. Use 3 levels of encryption:
 - Encrypt file using AES-128 and generates a random password (private key) required to decrypt file.
 - Encrypt the previous generated password with RSA Algorithm using a Private RSA PEM provided by user.
-- Generate a SHA-512 hash with encrypted file buffer and compress this hash in 16 bytes for generate a new password for AES-128 Algorithm.
+- Generate a SHA-512 hash with encrypted file buffer and transform this hash in 16 bytes - using RSA private key - for generate a new password for AES-128 Algorithm.
 - Encrypt RSA encrypted buffer password and Encrypted file (packed in a single file) using AES-128 Algorithm using new password generated with SHA-512 hash.
-- Store new encrypted file in system (with .wwe extension) and SHA-512 hash to validate the inner encrypted file in decryption process.
+- Store new encrypted file in system (with .wwe extension) and SHA-512 untransformed hash to validate the inner encrypted file in decryption process.
 
 ## Usage
 

@@ -15,7 +15,7 @@ char* titor::size_to_chars( size_t size ) {
 
 size_t titor::chars_to_size( char* csize ) {
 	size_t size = 0;
-	for(int i = 0; i < 4; i++) size += (csize[3-i] << (i*8));
+	for(int i = 0; i < 4; i++) size += (( (unsigned int) csize[3-i]) << (i*8));
 	return size;
 }
 
@@ -25,6 +25,16 @@ size_t titor::chars_to_size( char* csize ) {
  *
  * 
  */
+
+titor::shinfi::shinfi( string pem ) {
+
+	// Open PEM file used for encrypt private keyword.
+	
+	RSA::PrivateKey pk;
+	FileSource fs( pem.c_str() , true );
+	CryptoPP::PEM_Load(fs,PEM);
+
+}
 
 titor::AES_FILE_ENC titor::shinfi::encrypt(string file) {
 
@@ -38,16 +48,9 @@ titor::AES_FILE_ENC titor::shinfi::encrypt(string file) {
 	AES_FILE_ENC encoded = aes_encrypt( ifile );
 	ifile.close();
 
-	// Open PEM file used for encrypt private keyword.
-	
-	ifstream pfile( pem );
-	if( !pfile.is_open() ) throw 4;
-	RSA::PrivateKey rsa_pkey = get_rsa_private_key(pfile);
-	pfile.close();
-
 	// Encrypt private key using RSA Algorithm.
 	
-	encoded.pkey = rsa_encrypt_key(encoded.pkey, rsa_pkey);
+	encoded.pkey = rsa_encrypt_key(encoded.pkey);
 
 	return encoded;
 	
@@ -88,19 +91,9 @@ titor::AES_FILE_ENC titor::shinfi::aes_encrypt(ifstream& in) {
 
 }
 
-RSA::PrivateKey titor::shinfi::get_rsa_private_key(ifstream &pemstr) {
+ENC_BUFFER titor::shinfi::rsa_encrypt_key(ENC_BUFFER key) {
 
-	RSA::PrivateKey pk;
-	FileSource fs( pemstr, true );
-	CryptoPP::PEM_Load(fs,pk);
-
-	return pk;
-
-}
-
-ENC_BUFFER titor::shinfi::rsa_encrypt_key(ENC_BUFFER key, RSA::PrivateKey pkey) {
-
-	RSAES<PKCS1v15>::Encryptor enc(pkey);
+	RSAES<PKCS1v15>::Encryptor enc(this->PEM);
 	AutoSeededRandomPool asrn;
 
 	string encoded_key;
@@ -118,9 +111,9 @@ ENC_BUFFER titor::shinfi::rsa_encrypt_key(ENC_BUFFER key, RSA::PrivateKey pkey) 
 
 }
 
-ENC_BUFFER titor::shinfi::rsa_decrypt_key(ENC_BUFFER key, RSA::PrivateKey pkey) {
+ENC_BUFFER titor::shinfi::rsa_decrypt_key(ENC_BUFFER key) {
 
-	RSAES<PKCS1v15>::Decryptor dec(pkey);
+	RSAES<PKCS1v15>::Decryptor dec(this->PEM);
 	AutoSeededRandomPool asrn;
 	
 	string decoded_key;
@@ -194,7 +187,7 @@ ENC_BUFFER titor::shinfi::encrypt_final(ENC_BUFFER efile, HASH_BUFFER hash) {
 
 	byte* _hash = compress_hash_to_aes(hash);
 	ENC_BUFFER fefile;
-	
+
 	byte iv[AES::BLOCKSIZE];
         for( int i = 0; i < AES::BLOCKSIZE; ++i) iv[i] = 0;
 
@@ -219,9 +212,10 @@ ENC_BUFFER titor::shinfi::encrypt_final(ENC_BUFFER efile, HASH_BUFFER hash) {
 byte* titor::shinfi::compress_hash_to_aes(HASH_BUFFER hash) {
 
 	byte* rhash = new byte[AES_KEY_LENGTH];
+	Integer mask = (PEM.GetPrime1()*PEM.GetPrime2()) - PEM.GetPrivateExponent(); 
 
 	for( int i = 0; i < AES_KEY_LENGTH; ++i ) rhash[i] = 0;
-	for( int i = 0; i < hash.length(); ++i ) rhash[i % AES_KEY_LENGTH] ^= hash[i];
+	for( int i = 0; i < hash.length(); ++i ) rhash[i % AES_KEY_LENGTH] ^= ( hash[i] + mask.GetByte(i) );
 
 	return rhash;
 
@@ -292,14 +286,7 @@ titor::AES_FILE_ENC titor::shinfi::unpack(ENC_BUFFER packed, string hash ) {
 
 string titor::shinfi::decrypt(titor::AES_FILE_ENC unpacked) {
 
-	// Open PEM file used for encrypt private keyword.
-	
-	ifstream pfile( pem );
-	if( !pfile.is_open() ) throw 5;
-	RSA::PrivateKey rsa_pkey = get_rsa_private_key(pfile);
-	pfile.close();
-
-	unpacked.pkey = rsa_decrypt_key(unpacked.pkey, rsa_pkey);
+	unpacked.pkey = rsa_decrypt_key(unpacked.pkey);
 	
 	string decrypted_file;
 

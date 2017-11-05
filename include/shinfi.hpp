@@ -71,7 +71,7 @@ namespace titor {
 	class shinfi {
 
 		public:
-		shinfi(string pem):pem(pem){};
+		shinfi(string pem);
 		
 		AES_FILE_ENC encrypt(string);
 		ENC_BUFFER pack(AES_FILE_ENC);
@@ -83,11 +83,10 @@ namespace titor {
 		string decrypt(AES_FILE_ENC);
 
 		private:
-		string pem;
+		RSA::PrivateKey PEM;
 		AES_FILE_ENC aes_encrypt(ifstream& );
-		RSA::PrivateKey get_rsa_private_key(ifstream& );
-		ENC_BUFFER rsa_encrypt_key(ENC_BUFFER, RSA::PrivateKey);
-		ENC_BUFFER rsa_decrypt_key(ENC_BUFFER, RSA::PrivateKey);
+		ENC_BUFFER rsa_encrypt_key(ENC_BUFFER);
+		ENC_BUFFER rsa_decrypt_key(ENC_BUFFER);
 		byte* compress_hash_to_aes(HASH_BUFFER);
 	};
 

@@ -80,7 +80,7 @@ int main( int argc, char** argv) {
 		}
 	}
 	catch (int code) {
-		cout << "error" << endl <<  "Error code " << code << " in execution." << endl;
+		cout << "error" << endl << endl <<  "\tError code " << code << " in execution." << endl;
 	}
 
 	cout << endl << endl;
