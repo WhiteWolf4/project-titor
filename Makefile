@@ -2,15 +2,23 @@
 # Makefile to compile Project Titor
 #
 
-CC=g++
-CPPFLAGS=-I include
-LDLIBS= -Wl,-Bstatic -lcryptopp -Wl,-Bdynamic
+SRC_DIR := src
+OBJ_DIR := obj
+SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
+OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
+CPPFLAGS=-Iinclude/
+LDLIBS=$(shell pkg-config  --cflags --libs libcrypto++)
 
-DEPS=titor.o src/arguments.o src/pem-com.o src/pem-rd.o src/pem-wr.o src/shinfi.o
 
-all: titor
+titor: $(OBJ_FILES)
+	g++ -Wall -Wextra -g3 -std=c++11 $(CPPFLAGS) -o $@ titor.cpp $^ $(LDLIBS)
 
-titor: $(DEPS)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp object
+	g++ -Wall -Wextra -g3 -std=c++11 $(CPPFLAGS) -c $< -o $@ $(LDLIBS)
+
+object:
+	mkdir -p obj
 
 clean:
-	rm $(DEPS)
+	rm -rf obj
+	rm -f titor
